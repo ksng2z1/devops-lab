@@ -4,40 +4,73 @@ DISK_LIMIT=80
 RAM_LIMIT=80
 STATUS=0
 
-HOSTNAME=$(hostname)
-DATE=$(date +%F)
-LOAD_AVG=$(uptime | awk -F'load average:' '{ print $2 }' | xargs)
+print_header() {
+  local hostname_value
+  local current_date
+  local load_avg
 
-DISK_USED=$(df / | awk 'NR==2 { gsub("%", "", $5); print $5 }')
-RAM_USED=$(free | awk '/Mem:/ { printf "%.0f", $3/$2 * 100 }')
+  hostname_value=$(hostname)
+  current_date=$(date +%F)
+  load_avg=$(uptime | awk -F'load average:' '{ print $2 }' | xargs)
 
-echo "Healthcheck for: $HOSTNAME"
-echo "Date: $DATE"
-echo "Load average:$LOAD_AVG"
-echo "Disk used: ${DISK_USED}%"
-echo "RAM used: ${RAM_USED}%"
-echo
+  echo "Healthcheck for: $hostname_value"
+  echo "Date: $current_date"
+  echo "Load average: $load_avg"
+  echo
+}
 
-if [ "$DISK_USED" -ge "$DISK_LIMIT" ]; then
-  echo "WARN: disk usage is high"
-  STATUS=1
-else
-  echo "OK: disk usage is fine"
-fi
+check_disk() {
+  local disk_used
 
-if [ "$RAM_USED" -ge "$RAM_LIMIT" ]; then
-  echo "WARN: RAM usage is high"
-  STATUS=1
-else
-  echo "OK: RAM usage is fine"
-fi
+  disk_used=$(df / | awk 'NR==2 { gsub("%", "", $5); print $5 }')
 
-if systemctl is-active --quiet ssh; then
-  echo "OK: ssh service is active"
-else
-  echo "CRITICAL: ssh service is not active"
-  STATUS=1
-fi
+  echo "Disk used: ${disk_used}%"
+
+  if [ "$disk_used" -ge "$DISK_LIMIT" ]; then
+    echo "WARN: disk usage is high"
+    STATUS=1
+  else
+    echo "OK: disk usage is fine"
+  fi
+
+  echo
+}
+
+check_ram() {
+  local ram_used
+
+  ram_used=$(free | awk '/Mem:/ { printf "%.0f", $3/$2 * 100 }')
+
+  echo "RAM used: ${ram_used}%"
+
+  if [ "$ram_used" -ge "$RAM_LIMIT" ]; then
+    echo "WARN: RAM usage is high"
+    STATUS=1
+  else
+    echo "OK: RAM usage is fine"
+  fi
+
+  echo
+}
+
+check_service() {
+  local service_name
+
+  service_name="$1"
+
+  if systemctl is-active --quiet "$service_name"; then
+    echo "OK: $service_name service is active"
+  else
+    echo "CRITICAL: $service_name service is not active"
+    STATUS=1
+  fi
+
+  echo
+}
+
+print_header
+check_disk
+check_ram
+check_service "ssh"
 
 exit "$STATUS"
-
