@@ -72,5 +72,6 @@ print_header
 check_disk
 check_ram
 check_service "ssh"
+check_service "cron"
 
 exit "$STATUS"
