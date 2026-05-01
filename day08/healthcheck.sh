@@ -71,7 +71,14 @@ check_service() {
 print_header
 check_disk
 check_ram
-check_service "ssh"
-check_service "cron"
+
+if [ "$#" -eq 0 ]; then
+  check_service "ssh"
+  check_service "cron"
+else
+  for service_name in "$@"; do
+    check_service "$service_name"
+  done
+fi
 
 exit "$STATUS"
