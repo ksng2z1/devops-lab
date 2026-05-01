@@ -4,6 +4,16 @@ DISK_LIMIT=80
 RAM_LIMIT=80
 STATUS=0
 
+
+show_help() {
+  echo "Usage: $0 [service ...]"
+  echo
+  echo "Examples:"
+  echo "  $0"
+  echo "  $0 ssh cron"
+  echo "  $0 ssh cron docker"
+}
+
 print_header() {
   local hostname_value
   local current_date
@@ -67,6 +77,12 @@ check_service() {
 
   echo
 }
+
+if [ "${1:-}" = "--help" ]; then
+  show_help
+  exit 0
+fi
+
 
 print_header
 check_disk
